@@ -1,35 +1,52 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
+import React, { useState, useEffect } from 'react';
+import Station from './Station';
+import './App.css';
 
 function App() {
-  const [count, setCount] = useState(0)
+    const [stations, setStations] = useState([]);
+    const [loading, setLoading] = useState(true);
+    const [searchTerm, setSearchTerm] = useState('');
 
-  return (
-    <>
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.jsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
-  )
+    useEffect(() => {
+        fetch('https://api.sr.se/api/v2/channels?format=json&size=100')
+            .then(response => response.json())
+            .then(data => {
+                setStations(data.channels);
+                setLoading(false);
+            })
+            .catch(error => console.error('Error fetching data:', error));
+    }, []);
+
+    const filteredStations = stations.filter(station =>
+        station.name.toLowerCase().includes(searchTerm.toLowerCase())
+    );
+
+    return (
+        <div className="App">
+            <h1>Sveriges Radio Player</h1>
+            <input
+                type="text"
+                placeholder="Search for a station"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+            />
+            {loading ? (
+                <p>Loading...</p>
+            ) : (
+                <div className="station-list">
+                    {filteredStations.map(station => (
+                        <Station
+                            key={station.id}
+                            name={station.name}
+                            image={station.image}
+                            color={station.color}
+                            audio={station.liveaudio.url}
+                        />
+                    ))}
+                </div>
+            )}
+        </div>
+    );
 }
 
-export default App
+export default App;
